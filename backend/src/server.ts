@@ -1,8 +1,8 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
 
-app.listen(env.port, () => {
+app.listen(env.port, "0.0.0.0", () => {
   console.log(
-    `Spice Haven API running on http://localhost:${env.port}`,
+    `Spice Heaven API running on port ${env.port}`,
   );
 });
