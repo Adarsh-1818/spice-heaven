@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderType {
+  DELIVERY
+  COLLECTION
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  phone        String?
+  role         UserRole @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([email])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  menuItems MenuItem[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  categoryId  String
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+  addons   MenuItemAddon[]
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+  @@index([isAvailable])
+}
+
+model Addon {
+  id          String   @id @default(cuid())
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  menuItems MenuItemAddon[]
+  orderItemAddons OrderItemAddon[]
+}
+
+model MenuItemAddon {
+  menuItemId String
+  addonId    String
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  addon    Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, addonId])
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  userId          String?
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  orderType       OrderType
+  paymentMethod   PaymentMethod
+  status          OrderStatus   @default(PENDING)
+  subtotal        Decimal       @db.Decimal(10, 2)
+  deliveryFee     Decimal       @db.Decimal(10, 2)
+  total           Decimal       @db.Decimal(10, 2)
+  customerNotes   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User?             @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  deliveryAddress DeliveryAddress?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  menuItemId String
+  itemName   String
+  unitPrice  Decimal @db.Decimal(10, 2)
+  quantity   Int
+  notes      String?
+  subtotal   Decimal @db.Decimal(10, 2)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  addons   OrderItemAddon[]
+
+  @@index([orderId])
+}
+
+model OrderItemAddon {
+  id          String  @id @default(cuid())
+  orderItemId String
+  addonId     String
+  addonName   String
+  unitPrice   Decimal @db.Decimal(10, 2)
+  quantity    Int
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  addon     Addon     @relation(fields: [addonId], references: [id])
+
+  @@index([orderItemId])
+}
+
+model DeliveryAddress {
+  id           String @id @default(cuid())
+  orderId      String @unique
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  postcode     String
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model RestaurantSettings {
+  id                 String  @id @default(cuid())
+  restaurantName     String
+  phone              String?
+  email              String?
+  address            String?
+  minimumOrderAmount Decimal @db.Decimal(10, 2)
+  deliveryFee        Decimal @db.Decimal(10, 2)
+  freeDeliveryAbove  Decimal @db.Decimal(10, 2)
+  deliveryRadiusMiles Decimal @db.Decimal(5, 2)
+  isOpen             Boolean @default(true)
+  updatedAt          DateTime @updatedAt
+}
