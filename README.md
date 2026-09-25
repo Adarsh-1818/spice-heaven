@@ -1,3 +1,9 @@
+**🚀 Live Demo
+
+Live Website: https://spice-heaven-rose.vercel.app
+
+The live deployment is currently running with demo restaurant data and is intended for demonstration/testing purposes.**
+
 # Spice Heaven — Full-Stack Restaurant Ordering Platform
 
 A full-stack restaurant ordering platform built for **Spice Heaven**, designed to provide a modern online ordering experience for customers and an order management system for restaurant staff.
